@@ -18,7 +18,7 @@ OBJS		= $(patsubst src/%.c, obj/%.o, $(SRCS))
 
 CC			= gcc
 
-CFLAGS		= -Wall -Wextra -Werror -I include
+CFLAGS		= -Wall -Wextra -Werror -g -I include
 
 RM			= rm -f
 
@@ -47,3 +47,5 @@ fclean:		clean
 re:			fclean ${NAME}
 
 .PHONY:		all clean fclean re
+
+# valgrind --leak-check=full -s ./ft_ls

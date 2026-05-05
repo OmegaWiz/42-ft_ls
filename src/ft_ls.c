@@ -71,7 +71,19 @@ int	parse(char **argv)
 			ft_lstadd_back(&g_pending_dirs, tmp);
 		}
 	}
+	if (!g_pending_dirs)
+	{
+		g_pending_dirs = ft_lstnew(ft_strdup("."));
+		if (!g_pending_dirs)
+			return (ENOMEM);
+	}
 	return (0);
+}
+
+void	simple_print(void *data)
+{
+	t_path	*path = (t_path *)data;
+	printf("%s\n", path->name);
 }
 
 int	process_dir(char *path)
@@ -137,6 +149,8 @@ int	process_dir(char *path)
 	// sort table
 	ft_lstsort(&files, NULL);
 	// print table
+	ft_lstiter(files, simple_print);
+	ft_lstclear(&files, del_path);
 	return (0);
 }
 
