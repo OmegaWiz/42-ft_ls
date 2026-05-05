@@ -53,9 +53,9 @@ int	parse(char **argv)
 	on_flag = 1;
 	while (*++argv)
 	{
-		if (on_flag)
+		if (on_flag > 0)
 			on_flag = render_flags(*argv);
-		if (on_flag == 2)
+		if (on_flag == EINVAL)
 			return (EINVAL);
 		if (on_flag == 0)
 		{
@@ -98,6 +98,10 @@ int	process_dir(char *path)
 	struct dirent	*entry;
 	while ((entry = readdir(dir)))
 	{
+		// FLAG -a
+		if (entry->d_name[0] == '.' && g_opts.all == 0)
+			continue;
+		
 		t_path	*path = malloc(sizeof(t_path));
 		if (!path)
 		{

@@ -3,7 +3,7 @@
 ## TODOs
 
 - [ ] support for multiple files
-- [ ] -a
+- [x] -a
 - [ ] -l
 - [ ] -R
 - [ ] -r

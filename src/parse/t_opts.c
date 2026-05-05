@@ -45,8 +45,8 @@ int render_flags(char *arg) {
 			return (0);
 	} else {
 		while (arg[i]) {
-			if (!toggle_opt(arg[i++]))
-				return (2);
+			if (toggle_opt(arg[i++]) > 0)
+				return (EINVAL);
 		}
 	}
 	return (1);
