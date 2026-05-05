@@ -1,0 +1,14 @@
+# build output
+ft_ls
+obj/
+
+# example binary and symlink
+test/
+
+# macOS
+.DS_Store
+
+CLAUDE.md
+claude/
+*claude*
+*subject*
