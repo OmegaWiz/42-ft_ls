@@ -154,7 +154,7 @@ int	process_dir(char *path)
 	return (0);
 }
 
-int	main(int ac __attribute__((unused)), char **argv)
+int	main(int argc, char **argv)
 {
 	if (parse(argv))
 		return (errno); // TODO: print error
@@ -165,5 +165,5 @@ int	main(int ac __attribute__((unused)), char **argv)
 		g_pending_dirs = g_pending_dirs->next;
 		ft_lstdelone(tmp, free);
 	}
-	return (0);
+	return (argc - argc);
 }
