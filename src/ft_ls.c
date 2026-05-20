@@ -6,14 +6,16 @@
 /*   By: kkaiyawo <kkaiyawo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/24 17:30:55 by kkaiyawo          #+#    #+#             */
-/*   Updated: 2026/05/05 10:42:08 by kkaiyawo         ###   ########.fr       */
+/*   Updated: 2026/05/20 16:38:54 by kkaiyawo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/ft_ls.h"
 
 t_opts	g_opts;
-t_list	*g_pending_dirs = NULL;
+t_darr	g_pending_dirs;
+
+#include <stdio.h>
 
 /*
 as long as the arguments could be treated as flags, treat them as such
@@ -48,9 +50,11 @@ int	parse(char **argv)
 {
 	int		on_flag;
 	char	*path;
-	t_list	*tmp;
 
 	on_flag = 1;
+	/* ensure darr is initialized */
+	g_pending_dirs = ft_darr_init();
+
 	while (*++argv)
 	{
 		if (on_flag > 0)
@@ -62,20 +66,15 @@ int	parse(char **argv)
 			path = ft_strdup(*argv);
 			if (!path)
 				return (ENOMEM);
-			tmp = ft_lstnew(path);
-			if (!tmp)
-			{
-				free(path);
-				return (ENOMEM);
-			}
-			ft_lstadd_back(&g_pending_dirs, tmp);
+			ft_darr_push_back(&g_pending_dirs, path);
 		}
 	}
-	if (!g_pending_dirs)
+	if (g_pending_dirs.count == 0)
 	{
-		g_pending_dirs = ft_lstnew(ft_strdup("."));
-		if (!g_pending_dirs)
+		char *cwd = ft_strdup(".");
+		if (!cwd)
 			return (ENOMEM);
+		ft_darr_push_back(&g_pending_dirs, cwd);
 	}
 	return (0);
 }
@@ -86,75 +85,72 @@ void	simple_print(void *data)
 	printf("%s\n", path->name);
 }
 
+/* sort table by name */
+int path_cmp(const void *a, const void *b)
+{
+	t_path *pa = (t_path *) a;
+	t_path *pb = (t_path *) b;
+	return (ft_strncmp(pa->name, pb->name, ft_strlen(pa->name) + ft_strlen(pb->name) + 1));
+}
+
 int	process_dir(char *path)
 {
-	// create local linked list of files
-	t_list	*files = NULL;
-	
-	// gobble (lstat, etc. based on flag) each file --> ll
-	DIR	*dir = opendir(path);
+	t_darr files = ft_darr_init();
+
+	DIR *dir = opendir(path);
 	if (!dir)
 		return (errno);
-	struct dirent	*entry;
+	struct dirent *entry;
 	while ((entry = readdir(dir)))
 	{
-		// FLAG -a
 		if (entry->d_name[0] == '.' && g_opts.all == 0)
 			continue;
-		
-		t_path	*path = malloc(sizeof(t_path));
-		if (!path)
-		{
-			closedir(dir);
-			ft_lstclear(&files, del_path);
-			return (ENOMEM);
-		}
-		path->name = ft_strdup(entry->d_name);
-		if (!path->name)
-		{
-			free(path);
-			closedir(dir);
-			ft_lstclear(&files, del_path);
-			return (ENOMEM);
-		}
-		t_list	*tmp = ft_lstnew(path);
-		if (!tmp)
-		{
-			free(path->name);
-			free(path);
-			closedir(dir);
-			ft_lstclear(&files, del_path);
-			return (ENOMEM);
-		}
-		// do something more here
-		ft_lstadd_back(&files, tmp);
 
-		// if -R, add subdirectories to pending dirs
+		t_path *pth = malloc(sizeof(t_path));
+		if (!pth)
+		{
+			closedir(dir);
+			ft_darr_clear(&files, del_path);
+			return (ENOMEM);
+		}
+		pth->name = ft_strdup(entry->d_name);
+		if (!pth->name)
+		{
+			free(pth);
+			closedir(dir);
+			ft_darr_clear(&files, del_path);
+			return (ENOMEM);
+		}
+		ft_darr_push_back(&files, pth);
+
 		if (g_opts.recursive == 1)
 		{
-			//check if ignored
-			if (ft_strncmp(entry->d_name, ".", 2) 
+			if (ft_strncmp(entry->d_name, ".", 2)
 				&& ft_strncmp(entry->d_name, "..", 3))
 			{
-				t_list	*new = ft_lstnew(ft_strjoin(path->name, "/"));
-				if (!new)
+				char *joined = ft_strjoin(pth->name, "/");
+				if (!joined)
 				{
-					free(path->name);
-					free(path);
+					free(pth->name);
+					free(pth);
 					closedir(dir);
-					ft_lstclear(&files, del_path);
+					ft_darr_clear(&files, del_path);
 					return (ENOMEM);
 				}
-				ft_lstadd_back(&g_pending_dirs, new);
+				ft_darr_push_back(&g_pending_dirs, joined);
 			}
 		}
 	}
 	closedir(dir);
-	// sort table
-	ft_lstsort(&files, NULL);
-	// print table
-	ft_lstiter(files, simple_print);
-	ft_lstclear(&files, del_path);
+
+	printf("%s:\n", path);
+
+	ft_darr_sort(&files, path_cmp);
+
+	/* print table */
+	for (size_t i = 0; i < files.count; ++i)
+		simple_print(files.arr[i]);
+	ft_darr_clear(&files, del_path);
 	return (0);
 }
 
@@ -162,12 +158,11 @@ int	main(int argc, char **argv)
 {
 	if (parse(argv))
 		return (errno); // TODO: print error
-	while (g_pending_dirs)
+	while (g_pending_dirs.count > 0)
 	{
-		process_dir(g_pending_dirs->content);
-		t_list	*tmp = g_pending_dirs;
-		g_pending_dirs = g_pending_dirs->next;
-		ft_lstdelone(tmp, free);
+		process_dir((char *)g_pending_dirs.arr[0]);
+		ft_darr_remove(&g_pending_dirs, 0, free);
 	}
+	ft_darr_clear(&g_pending_dirs, free);
 	return (argc - argc);
 }

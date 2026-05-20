@@ -6,7 +6,7 @@
 /*   By: kkaiyawo <kkaiyawo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/24 17:31:23 by kkaiyawo          #+#    #+#             */
-/*   Updated: 2026/05/05 10:41:07 by kkaiyawo         ###   ########.fr       */
+/*   Updated: 2026/05/20 15:29:54 by kkaiyawo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,14 +43,14 @@ extern t_opts	g_opts;
 
 int	render_flags(char *arg);
 
-extern t_list	*g_pending_dirs;
+extern t_darr	g_pending_dirs;
 
 typedef struct s_path
 {
-	char			*name;
+	char		*name;
+	struct stat	s_stat;
 	// DIR				*dir;
 	// struct dirent	*s_entry;
-	struct stat		s_stat;
 }	t_path;
 
 void	*init_path();
