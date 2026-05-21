@@ -6,7 +6,7 @@
 /*   By: kkaiyawo <kkaiyawo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/24 17:30:55 by kkaiyawo          #+#    #+#             */
-/*   Updated: 2026/05/20 16:38:54 by kkaiyawo         ###   ########.fr       */
+/*   Updated: 2026/05/21 11:02:35 by kkaiyawo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,9 +52,7 @@ int	parse(char **argv)
 	char	*path;
 
 	on_flag = 1;
-	/* ensure darr is initialized */
 	g_pending_dirs = ft_darr_init();
-
 	while (*++argv)
 	{
 		if (on_flag > 0)
@@ -85,12 +83,100 @@ void	simple_print(void *data)
 	printf("%s\n", path->name);
 }
 
-/* sort table by name */
-int path_cmp(const void *a, const void *b)
+int	recursive_add_path(struct dirent *entry, t_path *pth, DIR *dir, t_darr *files)
 {
-	t_path *pa = (t_path *) a;
-	t_path *pb = (t_path *) b;
-	return (ft_strncmp(pa->name, pb->name, ft_strlen(pa->name) + ft_strlen(pb->name) + 1));
+	if (ft_strncmp(entry->d_name, ".", 2)
+		&& ft_strncmp(entry->d_name, "..", 3))
+	{
+		char *joined = ft_strjoin(pth->name, "/");
+		if (!joined)
+		{
+			free(pth->name);
+			free(pth);
+			closedir(dir);
+			ft_darr_clear(files, del_path);
+			return (ENOMEM);
+		}
+		ft_darr_push_back(&g_pending_dirs, joined);
+	}
+	return (0);
+}
+
+int mn(int a, int b)
+{
+	return (a < b) ? a : b;
+}
+
+char	f_loweri(unsigned int i, char c)
+{
+	(void) i;
+	return (ft_tolower(c));
+}
+
+int	cmp_default(const void *a, const void *b)
+{
+	size_t	i;
+	size_t	j;
+	char	*na;
+	char	*nb;
+	int		res;
+
+	na = ft_strmapi(((t_path *) a)->name, f_loweri);
+	if (!na)
+		return (0);
+	nb = ft_strmapi(((t_path *) b)->name, f_loweri);
+	if (!nb)
+	{
+		free(na);
+		return (0);
+	}
+	i = 0;
+	j = 0;
+	while (na[i] == '.' && na[i] != 0)
+		i++;
+	while (nb[j] == '.' && nb[j] != 0)
+		j++;
+	res = ft_strncmp(na + i, nb + j, mn(ft_strlen(na), ft_strlen(nb)) + 1);
+	free(na);
+	free(nb);
+	return (res);
+}
+
+int	cmp_time(const void *a, const void *b)
+{
+	time_t	ta;
+	time_t	tb;
+
+	ta = time(&((t_path *) a)->s_stat.st_mtime);
+	tb = time(&((t_path *) b)->s_stat.st_mtime);
+	if (ta > tb)
+		return (-1);
+	if (ta < tb)
+		return (1);
+	// unsigned long nsec_a;
+	// unsigned long nsec_b;
+
+	// nsec_a = ((t_path *) a)->s_stat.st_mtimensec;
+	// nsec_b = ((t_path *) b)->s_stat.st_mtimensec;
+	// if (nsec_a > nsec_b)
+	// 	return (-1);
+	// if (nsec_a < nsec_b)
+	// 	return (1);
+	return (0);
+}
+
+/*
+choices:
+- sort by name, ignore dots, ignore case (default)
+- sort by time modified, recent first (-t)
+*/
+int	sort_path(t_darr *files)
+{
+	if (g_opts.time_sort == 1)
+		ft_darr_sort(files, cmp_time);
+	else
+		ft_darr_sort(files, cmp_default);
+	return (0);
 }
 
 int	process_dir(char *path)
@@ -121,33 +207,29 @@ int	process_dir(char *path)
 			ft_darr_clear(&files, del_path);
 			return (ENOMEM);
 		}
+		if (lstat(pth->name, &pth->s_stat) == -1)
+		{
+			perror("lstat");
+			free(pth->name);
+			free(pth);
+			closedir(dir);
+			ft_darr_clear(&files, del_path);
+			return (errno);
+		}
 		ft_darr_push_back(&files, pth);
 
 		if (g_opts.recursive == 1)
 		{
-			if (ft_strncmp(entry->d_name, ".", 2)
-				&& ft_strncmp(entry->d_name, "..", 3))
-			{
-				char *joined = ft_strjoin(pth->name, "/");
-				if (!joined)
-				{
-					free(pth->name);
-					free(pth);
-					closedir(dir);
-					ft_darr_clear(&files, del_path);
-					return (ENOMEM);
-				}
-				ft_darr_push_back(&g_pending_dirs, joined);
-			}
+			if (recursive_add_path(entry, pth, dir, &files))
+				return (ENOMEM);
 		}
 	}
 	closedir(dir);
 
-	printf("%s:\n", path);
-
-	ft_darr_sort(&files, path_cmp);
+	sort_path(&files);
 
 	/* print table */
+	printf("%s:\n", path);
 	for (size_t i = 0; i < files.count; ++i)
 		simple_print(files.arr[i]);
 	ft_darr_clear(&files, del_path);

@@ -6,7 +6,7 @@
 #    By: kkaiyawo <kkaiyawo@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/02/15 09:04:03 by kkaiyawo          #+#    #+#              #
-#    Updated: 2026/05/20 16:35:37 by kkaiyawo         ###   ########.fr        #
+#    Updated: 2026/05/21 10:21:27 by kkaiyawo         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -19,7 +19,7 @@ OBJS		= $(patsubst src/%.c, obj/%.o, $(SRCS))
 CC			= gcc
 
 CFLAGS		= -Wall -Wextra -Werror -g -I include
-# CFLAGS		+= -fsanitize=address,undefined
+CFLAGS		+= -fsanitize=address,undefined
 
 RM			= rm -f
 
@@ -41,12 +41,15 @@ ${LIBFT}:
 
 clean:
 			${RM} -r obj
+			make -C include/libft clean
 
 fclean:		clean
 			${RM} ${NAME}
+			make -C include/libft fclean
 
 re:			fclean ${NAME}
+			make -C include/libft re
 
 .PHONY:		all clean fclean re
 
-# valgrind --leak-check=full -s ./ft_ls
+# valgrind --leak-check=full -show-leak-kinds=all ./ft_ls
