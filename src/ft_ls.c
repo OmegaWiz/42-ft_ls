@@ -6,7 +6,7 @@
 /*   By: kkaiyawo <kkaiyawo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/24 17:30:55 by kkaiyawo          #+#    #+#             */
-/*   Updated: 2026/05/21 11:02:35 by kkaiyawo         ###   ########.fr       */
+/*   Updated: 2026/05/21 11:32:20 by kkaiyawo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -144,24 +144,28 @@ int	cmp_default(const void *a, const void *b)
 
 int	cmp_time(const void *a, const void *b)
 {
-	time_t	ta;
-	time_t	tb;
+	// time_t	ta;
+	// time_t	tb;
 
-	ta = time(&((t_path *) a)->s_stat.st_mtime);
-	tb = time(&((t_path *) b)->s_stat.st_mtime);
-	if (ta > tb)
-		return (-1);
-	if (ta < tb)
-		return (1);
-	// unsigned long nsec_a;
-	// unsigned long nsec_b;
-
-	// nsec_a = ((t_path *) a)->s_stat.st_mtimensec;
-	// nsec_b = ((t_path *) b)->s_stat.st_mtimensec;
-	// if (nsec_a > nsec_b)
+	// ta = time(&((t_path *) a)->s_stat.st_mtime);
+	// tb = time(&((t_path *) b)->s_stat.st_mtime);
+	// if (ta > tb)
 	// 	return (-1);
-	// if (nsec_a < nsec_b)
+	// if (ta < tb)
 	// 	return (1);
+	struct timespec ta;
+	struct timespec tb;
+
+	ta = ((t_path *) a)->s_stat.st_mtim;
+	tb = ((t_path *) b)->s_stat.st_mtim;
+	if (ta.tv_sec > tb.tv_sec)
+		return (-1);
+	if (ta.tv_sec < tb.tv_sec)
+		return (1);
+	if (ta.tv_nsec > tb.tv_nsec)
+		return (-1);
+	if (ta.tv_nsec < tb.tv_nsec)
+		return (1);
 	return (0);
 }
 

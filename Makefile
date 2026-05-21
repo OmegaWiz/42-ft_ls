@@ -6,7 +6,7 @@
 #    By: kkaiyawo <kkaiyawo@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/02/15 09:04:03 by kkaiyawo          #+#    #+#              #
-#    Updated: 2026/05/21 10:21:27 by kkaiyawo         ###   ########.fr        #
+#    Updated: 2026/05/21 11:32:57 by kkaiyawo         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,7 +16,7 @@ SRCS		= src/ft_ls.c \
 
 OBJS		= $(patsubst src/%.c, obj/%.o, $(SRCS))
 
-CC			= gcc
+CC			= cc
 
 CFLAGS		= -Wall -Wextra -Werror -g -I include
 CFLAGS		+= -fsanitize=address,undefined
