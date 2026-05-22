@@ -6,7 +6,7 @@
 /*   By: kkaiyawo <kkaiyawo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/24 17:30:55 by kkaiyawo          #+#    #+#             */
-/*   Updated: 2026/05/21 11:32:20 by kkaiyawo         ###   ########.fr       */
+/*   Updated: 2026/05/21 21:30:23 by kkaiyawo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,7 @@ int	parse(char **argv)
 			if (!path)
 				return (ENOMEM);
 			ft_darr_push_back(&g_pending_dirs, path);
+			g_opts.argc++;
 		}
 	}
 	if (g_pending_dirs.count == 0)
@@ -73,14 +74,9 @@ int	parse(char **argv)
 		if (!cwd)
 			return (ENOMEM);
 		ft_darr_push_back(&g_pending_dirs, cwd);
+		g_opts.argc = 0;
 	}
 	return (0);
-}
-
-void	simple_print(void *data)
-{
-	t_path	*path = (t_path *)data;
-	printf("%s\n", path->name);
 }
 
 int	recursive_add_path(struct dirent *entry, t_path *pth, DIR *dir, t_darr *files)
@@ -113,7 +109,7 @@ char	f_loweri(unsigned int i, char c)
 	return (ft_tolower(c));
 }
 
-int	cmp_default(const void *a, const void *b)
+int	cmp_name_utf(const void *a, const void *b)
 {
 	size_t	i;
 	size_t	j;
@@ -144,15 +140,6 @@ int	cmp_default(const void *a, const void *b)
 
 int	cmp_time(const void *a, const void *b)
 {
-	// time_t	ta;
-	// time_t	tb;
-
-	// ta = time(&((t_path *) a)->s_stat.st_mtime);
-	// tb = time(&((t_path *) b)->s_stat.st_mtime);
-	// if (ta > tb)
-	// 	return (-1);
-	// if (ta < tb)
-	// 	return (1);
 	struct timespec ta;
 	struct timespec tb;
 
@@ -179,7 +166,73 @@ int	sort_path(t_darr *files)
 	if (g_opts.time_sort == 1)
 		ft_darr_sort(files, cmp_time);
 	else
-		ft_darr_sort(files, cmp_default);
+		ft_darr_sort(files, cmp_name_utf);
+	return (0);
+}
+
+
+int	ft_isspace(char c)
+{
+	return (c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r');
+}
+
+void	print_pathname(void *data)
+{
+	size_t	i;
+	int		is_only_spaces;
+	t_path	*path;
+
+	is_only_spaces = 1;
+	i = 0;
+	path = (t_path *)data;
+	while (path->name[i])
+	{
+		if (!ft_isspace(path->name[i]))
+			is_only_spaces = 0;
+		i++;
+	}
+	if (is_only_spaces)
+	{
+		ft_putchar_fd('\'', 1);
+		ft_putstr_fd(path->name, 1);
+		ft_putendl_fd("\'", 1);
+	}
+	else
+		ft_putendl_fd(path->name, 1);
+}
+
+int	print_simple(t_darr *files)
+{
+	size_t i;
+
+	if (g_opts.reverse_order == 1)
+	{
+		i = files->count;
+		while (i-- > 0)
+			print_pathname(files->arr[i]);
+	}
+	else
+	{
+		i = 0;
+		while (i < files->count)
+			print_pathname(files->arr[i++]);
+	}
+	return (0);
+}
+int	print_long(t_darr *files)
+{
+	(void) files;
+	return (0);
+}
+
+int print_dir(char *path, t_darr *files)
+{
+	if (!(g_opts.argc == 0 && g_opts.recursive == 0))
+		printf("%s:\n", path);
+	if (g_opts.long_format == 1)
+		print_long(files);
+	else
+		print_simple(files);
 	return (0);
 }
 
@@ -189,7 +242,10 @@ int	process_dir(char *path)
 
 	DIR *dir = opendir(path);
 	if (!dir)
+	{
+		ft_putendl_fd("ft_ls: not a directory: ", 2);
 		return (errno);
+	}
 	struct dirent *entry;
 	while ((entry = readdir(dir)))
 	{
@@ -233,9 +289,7 @@ int	process_dir(char *path)
 	sort_path(&files);
 
 	/* print table */
-	printf("%s:\n", path);
-	for (size_t i = 0; i < files.count; ++i)
-		simple_print(files.arr[i]);
+	print_dir(path, &files);
 	ft_darr_clear(&files, del_path);
 	return (0);
 }

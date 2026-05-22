@@ -6,7 +6,7 @@
 /*   By: kkaiyawo <kkaiyawo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/24 17:31:23 by kkaiyawo          #+#    #+#             */
-/*   Updated: 2026/05/21 11:27:39 by kkaiyawo         ###   ########.fr       */
+/*   Updated: 2026/05/21 11:46:57 by kkaiyawo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@
 
 typedef struct s_opts
 {
+	int	argc;
 	int	recursive;
 	int	all;
 	int	long_format;
